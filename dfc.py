@@ -4,6 +4,7 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import json
+import pandas as pd
 # from alpha_vantage.timeseries import TimeSeries
 
 # ts = TimeSeries(key='2TRGKH45LL2XZRE3',rapidapi=True)
@@ -191,10 +192,61 @@ def growthEstimates():
   except requests.exceptions.RequestException as e:
       return(f"Error en la solicitud: {e}")
 
+def getEbitda(ticker):
+  global incomeStmt
+  try:
+    ebitda = incomeStmt.loc['EBITDA']
+  except:
+    return 'No se pudo obtener el EBITDA de la acción'
+  i = 0
+  last_year_ebitda = ebitda.iloc[i]
+  while math.isnan(ebitda.iloc[i]):
+    i += 1
+    last_year_ebitda = ebitda.iloc[i]
+  return last_year_ebitda
 
+def getEarnings(ticker):
+  global incomeStmt
+  try:
+    grossProfitArr = incomeStmt.loc['Gross Profit']
+    totalRevenueArr = incomeStmt.loc['Total Revenue']
+  except:
+    return 'No se pudo obtener las ganancias de la acción'
+  i = 0
+  grossProfit = grossProfitArr.iloc[i]
+  totalRevenue = totalRevenueArr.iloc[i]
+  while math.isnan(grossProfitArr.iloc[i]):
+    i += 1
+    grossProfit = grossProfitArr.iloc[i]
+  while math.isnan(totalRevenueArr.iloc[i]):
+    i += 1
+    totalRevenue = totalRevenueArr.iloc[i]
+  return (grossProfit / totalRevenue) * 100
 
-def arrDfc(tickerStr, g = 0.03, rf = 0.04243, rm = 0.1):
-  print('hola')
+def getRoe(ticker):
+  global balanceSheet
+  global incomeStmt
+  try:
+    netIncome = incomeStmt.loc['Net Income']
+    i = 0
+    last_year_net_income = netIncome.iloc[i]
+    while math.isnan(netIncome.iloc[i]):
+      i += 1
+      last_year_net_income = netIncome.iloc[i]
+  except:
+    return 'No se pudo obtener el net income de la acción'
+  try:
+    equity = balanceSheet.loc['Stockholders Equity']
+    i = 0
+    last_year_equity = equity.iloc[i]
+    while math.isnan(equity.iloc[i]):
+      i += 1
+      last_year_equity = equity.iloc[i]
+  except:
+    return 'No se pudo obtener el equity de la acción'
+  return (last_year_net_income / last_year_equity) * 100
+
+def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
   global balanceSheet
   global info
   global financials
@@ -204,30 +256,47 @@ def arrDfc(tickerStr, g = 0.03, rf = 0.04243, rm = 0.1):
   
   for i in range(0, len(tickerStr)):
     ticker = yf.Ticker(tickerStr[i])
+    ebitda = 0
+    earnings = 0
+    roe = 0
     
     balanceSheet = getBalanceSheet(ticker)
     info = getInfo(ticker)
     financials = getFinancials(ticker)
     incomeStmt = getIncomeStmt(ticker)
     cashFlow = getCashFlow(ticker)
-        
-    # print(balanceSheet)
-    # print(info['marketCap'])
-    # print(financials)
-    # print(incomeStmt)
-    # print(cashFlow)
+    
+    # print(getRoe(ticker))
+  
+    if (hasEbitda):
+      ebitda = getEbitda(ticker)
+      # print('EBITDA: ', ebitda)
+    
+    if (hasEarnings):
+      earnings = (format(getEarnings(ticker), '.2f')) + ' %'
+      # print('Earnings: ', earnings)
+    
+    if (hasRoe):
+      roe = (format(getRoe(ticker), '.2f')) + ' %'
+      # print('ROE: ', roe)
+      
+    options = [ebitda, earnings, roe]
+    finalsOptions = []
+    for option in options:
+      if (option != 0):
+        finalsOptions.append(option)
+
     
     resultDFC = dfc(ticker, g, rf, rm)
     if (type(resultDFC) == str):
-      print(resultDFC)
       return resultDFC
 
     arrayWithUSD = ['$ ' + str(value) for value in resultDFC[2]]
-    finalResult.append([ticker, resultDFC[0], resultDFC[1]] + arrayWithUSD + [resultDFC[3]] + [resultDFC[4]] + [resultDFC[5]] + [resultDFC[6]] + [resultDFC[7]])
+    finalResult.append([tickerStr[i], resultDFC[0], resultDFC[1]] + arrayWithUSD + [resultDFC[3]] + [resultDFC[4]] + [resultDFC[5]] + [resultDFC[6]] + finalsOptions)
   
   return finalResult
 
-def dfc(ticker, g = 0.03, rf = 0.04243, rm = 0.1):
+def dfc(ticker, g, rf, rm):
   global balanceSheet
   global info
   global financials
@@ -238,13 +307,17 @@ def dfc(ticker, g = 0.03, rf = 0.04243, rm = 0.1):
   
   # Obtenemos la tasa de crecimiento de los FCF
   growthFCF = growthEstimates()
-  if (type(growthFCF) == str):
+  # growthFCF = float(growthFCF.replace('%', '')) / 100
+  try:
+    growthFCF = float(growthFCF.replace('%', '')) / 100
+  except:
     return growthFCF
-  growthFCF = float(growthFCF.replace('%', '')) / 100
+  
 
   
   # Obtenemos la tasa de descuento (WACC)
   wacc = waccCalculator(ticker, rf, rm)
+  print('WACC: ', wacc)
   if (type(wacc) != float):
     return wacc
   
@@ -313,7 +386,7 @@ def dfc(ticker, g = 0.03, rf = 0.04243, rm = 0.1):
   
   # return format((intrinsic_value), '.2f')
   # print(tickerYf, wacc, printFCF, FCFn, equity_value, equity_value)
-  return [(format((wacc * 100), '.2f'), '%'), ('$', printFCF), FCFn, ('$', format(equity_value, '.0f')), price, format(intrinsic_value, '.2f'), format((difference * 100), '.2f'), '%']
+  return [(format((wacc * 100), '.2f') + ' %'), ('$ ' + str(printFCF)), FCFn, ('$ ' + format(equity_value, '.0f')), price, format(intrinsic_value, '.2f'), format((difference * 100), '.2f')]
 
 
 def getBalanceSheet(ticker):
@@ -332,4 +405,11 @@ def getFinancials(ticker):
   return ticker.financials
 
 
-arrDfc(['GOOG'], 0.03, 0.04243, 0.1)
+def ToExelOrCvs():
+  exelResult = arrDfc(['AAPL', 'MSFT'], 0.04, 0.1, 0.03, 0)
+  df_result = pd.DataFrame(exelResult, columns=['Ticker', 'WACC', '2023', '2024', '2025', '2026', '2027', '2028', 'Valor de la empresa', 'Precio', 'Valor intrínseco', 'Diferencia', 'ebitda'])
+  print(df_result)
+  df_result.to_excel('dfc.xlsx', index=False)
+  
+  
+# arrDfc(['AAPL', 'MSFT'], 0.04, 0.1, 0.03, 0, 0)
