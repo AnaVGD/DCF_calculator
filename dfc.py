@@ -273,7 +273,7 @@ def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
       # print('EBITDA: ', ebitda)
     
     if (hasEarnings):
-      earnings = (format(getEarnings(ticker), '.2f')) + ' %'
+      earnings = ((format(getEarnings(ticker), '.2f')), ' %')
       # print('Earnings: ', earnings)
     
     if (hasRoe):

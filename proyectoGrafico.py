@@ -13,7 +13,7 @@ ventana.configure(background="white")
 frame2 = tk.Frame(ventana, width=500, height=100, bg="white")
 frame2.pack()
 
-frame = tk.Frame(ventana, width=700, height=300, bg="blue")
+frame = tk.Frame(ventana, width=700, height=300, bg="white")
 frame.pack()
 
 
@@ -92,12 +92,12 @@ def createTable():
   
   table.heading(1, text="Ticker")
   table.heading(2, text="WACC")
-  table.heading(3, text="2023")
-  table.heading(4, text="2024")
-  table.heading(5, text="2025")
-  table.heading(6, text="2026")
-  table.heading(7, text="2027")
-  table.heading(8, text="2028")
+  table.heading(3, text="FCF 2023")
+  table.heading(4, text="FCF 2024")
+  table.heading(5, text="FCF 2025")
+  table.heading(6, text="FCF 2026")
+  table.heading(7, text="FCF 2027")
+  table.heading(8, text="FCF 2028")
   table.heading(9, text="Valor de la empresa")
   table.heading(10, text="Precio de la acción")
   table.heading(11, text="Valor intrínseco de la acción")
@@ -293,6 +293,10 @@ check3.place(x=500, y=95)
 
 tableFrame = tk.Frame(ventana, width=500, height=70, bg="white")
 tableFrame.pack()
+
+exelFrame = tk.Frame(ventana, width=500, height=70, bg='blue')
+exelFrame.pack()
+
 
 buttonXLS = tk.Button(ventana, text="Exportar a Excel", width=20, height=2, bg="DeepSkyBlue3", fg="white")
 buttonXLS.pack()
