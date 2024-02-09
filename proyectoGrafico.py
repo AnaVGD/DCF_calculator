@@ -1,56 +1,67 @@
 import tkinter as tk
-from dfc import arrDfc, dfc, getEbitda
-from tkinter import ttk
-from PIL import ImageTk, Image
+from tkinter import filedialog, ttk
+import pandas as pd
+from dfc import arrDfc, dfc
+
+data = []
+addRange = 1
+entries = []
 
 ventana = tk.Tk()
 
 ventana.title("Mi primera ventana")
-ventana.geometry("600x400")
-ventana.minsize(1500, 700)
+ventana.state("zoomed")
+ventana.minsize(600, 400)
+
 ventana.configure(background="white")
 
-frame2 = tk.Frame(ventana, width=500, height=100, bg="white")
-frame2.pack()
+mainFrame = tk.Frame(ventana)
+mainFrame.pack(fill=tk.BOTH, expand=True)
 
-frame = tk.Frame(ventana, width=700, height=300, bg="white")
-frame.pack()
+myCanvas = tk.Canvas(mainFrame, bg="white")
+myCanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+myScrollbar = ttk.Scrollbar(mainFrame, orient=tk.VERTICAL, command=myCanvas.yview)
+myScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+myCanvas.configure(yscrollcommand=myScrollbar.set)
+myCanvas.bind('<Configure>', lambda e: myCanvas.configure(scrollregion = myCanvas.bbox("all")))
+
+secondFrame = tk.Frame(myCanvas, bg="white")
+
+def center_window(event=None): 
+    myCanvas.update_idletasks()
+
+    # Obtener el tamaño de la ventana
+    window_width = myCanvas.winfo_width()
+
+    frame_width = secondFrame.winfo_reqwidth()
+
+    x = (window_width - frame_width) / 2
+
+    myCanvas.create_window((x, 0), window=secondFrame, anchor="n")
+    myCanvas.configure(scrollregion=myCanvas.bbox("all"))
 
 
-title = tk.Label(frame2, text="Calculadora de DFC", font=("Arial", 20), bg="white")
+center_window()
+
+myCanvas.bind("<Configure>", center_window)
+
+title = tk.Label(secondFrame, text="Calculadora de DFC", font=("Arial", 20), bg="white")
 title.pack()
 
-
-
-addRange = 1
-entries = []  # Lista para almacenar las referencias a los Entry
-
-def calculate():
-  # resultG = g.get()
-  # resultRF = rf.get()
-  # resultRM = rm.get()
-  # print(float(resultG), float(resultRF), float(resultRM))
-  
-  frame3 = tk.Frame(ventana, width=500, height=100, bg="white")
-  frame3.pack()
-  for i in range(0, len(entries)):
-    ventana.geometry("600x" + str(500+(i)*40))
-    label = tk.Label(frame3, text="El valor intrinseco de " + str(entries[i].get()) + ": " + dfc(entries[i].get(), float(g.get()), float(rf.get()), float(rm.get())) , bg="gray90")
-    label.pack()
-    label.config(font=("Arial", 20), height=2, width=30)
-    
-  # dfc(ticker.get(), float(g.get()), float(rf.get()), float(rm.get()))
-  
-  
+frame = tk.Frame(secondFrame, width=700, height=300, bg="white")
+frame.pack()
 
 def createTable():
   # limpiamos la tabla
+  global data
   for widget in tableFrame.winfo_children():
     widget.destroy()
   
   entry_values = [entry.get() for entry in entries]
   data = arrDfc(entry_values, float(g.get()), float(rf.get()), float(rm.get()), ebitda.get(), earnings.get(), roe.get())
-  print(data)
+
   height = entries.__len__()
   if (ebitda.get() == 1 and earnings.get() == 1 and roe.get() == 1):
     table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15), show="headings", height=height)
@@ -65,10 +76,12 @@ def createTable():
   elif (earnings.get() == 1):
     table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13), show="headings", height=height)
   elif (roe.get() == 1):
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13), show="headings", height=height)
+    table = tk.ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13), show="headings", height=height)
   else:
     table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12), show="headings", height=height)
   
+  
+  # Inside createTable() function after creating the Treeview
   
   # Ajustar el ancho de cada columna
   table.column(1, width=110, anchor=tk.CENTER)
@@ -140,11 +153,13 @@ def createTable():
   table.pack(fill="both", expand=True)
   for row in data:
     table.insert('', 'end', values=row)
+    
+  if (len(data) > 0):
+    buttonXLS = tk.Button(exelFrame, text="Exportar a Excel", width=20, height=2, bg="DeepSkyBlue3", fg="white")
+    buttonXLS.pack()
+    buttonXLS.place(x=200, y=0)
+    buttonXLS.config(command=ToExcelOrCsv)
       
-
-# change icon
-
-
 def treeview_sort_column(tv, col, reverse):
 
 
@@ -159,15 +174,13 @@ def treeview_sort_column(tv, col, reverse):
   tv.heading(col, command=lambda: \
               treeview_sort_column(tv, col, not reverse))
 
-
-
 boton1 = tk.Button(frame, text="Calcular DFC", width=20, height=2, bg="DeepSkyBlue3", fg="white")
 boton1.pack()
-boton1.place(x=275, y=240)
+boton1.place(x=300, y=240)
 boton1.config(command=createTable)
 # boton1.config(command=calculate)
 
-status = tk.Label(ventana, text="Status: ", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+status = tk.Label(frame, text="Status: ", bd=1, relief=tk.SUNKEN, anchor=tk.W)
 
 def isValid():
   for entry in entries:
@@ -187,12 +200,13 @@ def add():
   entry.pack()
   entry.place(x=40, y=1+(addRange-1)*40)
   entries.append(entry)  # Agregar referencia del Entry a la lista
-  entries[0].insert(0, "AAPL")
+  # entries[0].insert(0, "AAPL")
   if (addRange > 5):
     print(frame.winfo_height())
     frame.configure(height=frame.winfo_height()+40)
-    boton1.place(x=180, y=240+(addRange-5)*40)
-    ventana.geometry("600x" + str(500+(addRange-5)*40))
+    boton1.place(x=275, y=240+(addRange-5)*40)
+    myCanvas.configure(scrollregion=myCanvas.bbox("all"))
+    # ventana.geometry("600x" + str(500+(addRange-5)*40))
     
   if (addRange > 2):
     print("create")
@@ -207,12 +221,13 @@ def delete():
     entries.pop()  # Eliminar referencia del Entry de la lista
     if (addRange > 4):
       frame.configure(height=frame.winfo_height()-40)
-      boton1.place(x=180, y=240+(addRange-5)*40)
-      ventana.geometry("600x" + str(500+(addRange-5)*40))
+      boton1.place(x=275, y=240+(addRange-5)*40)
+      myCanvas.configure(scrollregion=myCanvas.bbox("all"))
+      # ventana.geometry("600x" + str(500+(addRange-5)*40))
     else:
       # frame.configure(height=frame.winfo_height()-40)
-      boton1.place(x=180, y=240)
-      ventana.geometry("600x400")
+      boton1.place(x=275, y=240)
+      # ventana.geometry("600x400")
     if (addRange <= 2):
       print("desactive")
       bottonDelete.config(state="disabled")
@@ -291,18 +306,38 @@ check3.pack()
 check3.place(x=500, y=95)
 
 
-tableFrame = tk.Frame(ventana, width=500, height=70, bg="white")
+tableFrame = tk.Frame(secondFrame, width=500, height=70, bg="white")
 tableFrame.pack()
 
-exelFrame = tk.Frame(ventana, width=500, height=70, bg='blue')
+exelFrame = tk.Frame(secondFrame, width=500, height=70, bg='white')
 exelFrame.pack()
 
+def ToExcelOrCsv():
+  global data
+  options = []
+  if (ebitda.get() == 1):
+    options.append("EBITDA")
+  if (earnings.get() == 1):
+    options.append("Margen de beneficio bruto")
+  if (roe.get() == 1):
+    options.append("ROE")
+  df_result = pd.DataFrame(data, columns=['Ticker', 'WACC', 'FCF 2023', 'FCF 2024', 'FCF 2025', 'FCF 2026', 'FCF 2027', 'FCF 2028', 'Valor de la empresa', 'Precio de la acción', 'Valor intrínseco de la acción', 'Diferencia'] + options)
+  
+  # Crear una ventana Tkinter sin mostrarla
+  root = tk.Tk()
+  root.withdraw()
+  
+  # Mostrar el cuadro de diálogo para guardar archivo y obtener la ruta seleccionada
+  file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], initialfile="dfc")
+  
+  if file_path:  # Comprobar si se seleccionó un archivo
+      df_result.to_excel(file_path, index=False)
+      print(f"El archivo se guardó correctamente en: {file_path}")
 
-buttonXLS = tk.Button(ventana, text="Exportar a Excel", width=20, height=2, bg="DeepSkyBlue3", fg="white")
-buttonXLS.pack()
-buttonXLS.place(x=180, y=240)
+# Llama a la función para ejecutarla
+
+
 # crear una tabla
-
 
 
 ventana.mainloop()
