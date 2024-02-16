@@ -1,5 +1,7 @@
+import stat
 import tkinter as tk
-from tkinter import filedialog, ttk
+import time
+from tkinter import N, filedialog, ttk
 import pandas as pd
 from dfc import arrDfc, dfc
 
@@ -53,111 +55,58 @@ title.pack()
 frame = tk.Frame(secondFrame, width=700, height=300, bg="white")
 frame.pack()
 
+
 def createTable():
-  # limpiamos la tabla
   global data
   for widget in tableFrame.winfo_children():
-    widget.destroy()
-  
+      widget.destroy()
+
+  start_time = time.time()
+
   entry_values = [entry.get() for entry in entries]
+  if entry_values.count("") > 0:
+      status.config(text="Debes llenar todos los campos")
+      status.place(x=293, y=220)
+      return
+
   data = arrDfc(entry_values, float(g.get()), float(rf.get()), float(rm.get()), ebitda.get(), earnings.get(), roe.get())
+  end_time = time.time()
+  elapsed_time = end_time - start_time
+  print(f"Tiempo transcurrido: {elapsed_time} segundos")
 
-  height = entries.__len__()
-  if (ebitda.get() == 1 and earnings.get() == 1 and roe.get() == 1):
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15), show="headings", height=height)
-  elif (ebitda.get() == 1 and earnings.get() == 1):
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13,14), show="headings", height=height)
-  elif (ebitda.get() == 1 and roe.get() == 1):
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13,14), show="headings", height=height)
-  elif (earnings.get() == 1 and roe.get() == 1):
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13,14), show="headings", height=height)
-  elif (ebitda.get() == 1):
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13), show="headings", height=height)
-  elif (earnings.get() == 1):
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13), show="headings", height=height)
-  elif (roe.get() == 1):
-    table = tk.ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12,13), show="headings", height=height)
-  else:
-    table = ttk.Treeview(tableFrame, columns=(1,2,3,4,5,6,7,8,9,10,11,12), show="headings", height=height)
-  
-  
-  # Inside createTable() function after creating the Treeview
-  
-  # Ajustar el ancho de cada columna
-  table.column(1, width=110, anchor=tk.CENTER)
-  table.column(2, width=110, anchor=tk.CENTER)
-  table.column(3, width=110, anchor=tk.CENTER)
-  table.column(4, width=110, anchor=tk.CENTER)
-  table.column(5, width=110, anchor=tk.CENTER)
-  table.column(6, width=110, anchor=tk.CENTER)
-  table.column(7, width=110, anchor=tk.CENTER)
-  table.column(8, width=110, anchor=tk.CENTER)
-  table.column(9, width=110, anchor=tk.CENTER)
-  table.column(10, width=110, anchor=tk.CENTER)
-  table.column(11, width=110, anchor=tk.CENTER)
-  table.column(12, width=110, anchor=tk.CENTER)
-  
+  if type(data) == str:
+      status.config(text=f"{data} comprueba que los datos sean correctos")
+      status.place(x=100, y=220)
+      return
 
-  # Si selecciono una columna, ordenar por esa columna
-  for col in (1,2,3,4,5,6,7,8,9,10,11,12):
-    table.heading(col, command=lambda _col=col: \
-                    treeview_sort_column(table, _col, False))
-  
-  table.heading(1, text="Ticker")
-  table.heading(2, text="WACC")
-  table.heading(3, text="FCF 2023")
-  table.heading(4, text="FCF 2024")
-  table.heading(5, text="FCF 2025")
-  table.heading(6, text="FCF 2026")
-  table.heading(7, text="FCF 2027")
-  table.heading(8, text="FCF 2028")
-  table.heading(9, text="Valor de la empresa")
-  table.heading(10, text="Precio de la acción")
-  table.heading(11, text="Valor intrínseco de la acción")
-  table.heading(12, text="Diferencia")
-  
-  print(ebitda.get(), earnings.get(), roe.get())
-  
-  if (ebitda.get() == 1 and earnings.get() == 1 and roe.get() == 1):
-    table.column(13, width=110, anchor=tk.CENTER)
-    table.column(14, width=110, anchor=tk.CENTER)
-    table.column(15, width=110, anchor=tk.CENTER)
-    table.heading(13, text="EBITDA")
-    table.heading(14, text="Margen de beneficio bruto")
-    table.heading(15, text="ROE")
-  elif (ebitda.get() == 1 and earnings.get() == 1):
-    table.column(13, width=110, anchor=tk.CENTER)
-    table.column(14, width=110, anchor=tk.CENTER)
-    table.heading(13, text="EBITDA")
-    table.heading(14, text="Margen de beneficio bruto")
-  elif (ebitda.get() == 1 and roe.get() == 1):
-    table.column(13, width=110, anchor=tk.CENTER)
-    table.column(14, width=110, anchor=tk.CENTER)
-    table.heading(13, text="EBITDA")
-    table.heading(14, text="ROE")
-  elif (earnings.get() == 1 and roe.get() == 1):
-    table.column(13, width=110, anchor=tk.CENTER)
-    table.column(14, width=110, anchor=tk.CENTER)
-    table.heading(13, text="Margen de beneficio bruto")
-    table.heading(14, text="ROE")
-  elif (ebitda.get() == 1):
-    table.column(13, width=110, anchor=tk.CENTER)
-    table.heading(13, text="EBITDA")
-  elif (earnings.get() == 1):
-    table.column(13, width=110, anchor=tk.CENTER)
-    table.heading(13, text="Margen de beneficio bruto")
-  elif (roe.get() == 1):
-    table.column(13, width=110, anchor=tk.CENTER)
-    table.heading(13, text="ROE")
-  
+  height = len(entries)
+  columns = 12 + ebitda.get() + earnings.get() + roe.get()
+  table = ttk.Treeview(tableFrame, columns=tuple(range(1, columns+1)), show="headings", height=height)
+
+  for i in range(1, columns+1):
+      table.column(i, width=110, anchor=tk.CENTER)
+      table.heading(i, command=lambda _col=i: treeview_sort_column(table, _col, False))
+
+  headings = ["Ticker", "WACC", "FCF 2023", "FCF 2024", "FCF 2025", "FCF 2026", "FCF 2027", "FCF 2028", "Valor de la empresa", "Precio de la acción", "Valor intrínseco", "Diferencia"]
+  if ebitda.get() == 1:
+      headings.append("EBITDA")
+  if earnings.get() == 1:
+      headings.append("Margen de beneficio bruto")
+  if roe.get() == 1:
+      headings.append("ROE")
+
+  for i, heading in enumerate(headings, start=1):
+      table.heading(i, text=heading)
+
   table.pack(fill="both", expand=True)
+
   for row in data:
-    table.insert('', 'end', values=row)
-    
+      table.insert('', 'end', values=row)
+      
   if (len(data) > 0):
     buttonXLS = tk.Button(exelFrame, text="Exportar a Excel", width=20, height=2, bg="DeepSkyBlue3", fg="white")
     buttonXLS.pack()
-    buttonXLS.place(x=200, y=0)
+    buttonXLS.place(x=200, y=10)
     buttonXLS.config(command=ToExcelOrCsv)
       
 def treeview_sort_column(tv, col, reverse):
@@ -174,62 +123,94 @@ def treeview_sort_column(tv, col, reverse):
   tv.heading(col, command=lambda: \
               treeview_sort_column(tv, col, not reverse))
 
+
+status = tk.Label(frame, bd=0, relief=tk.SUNKEN, anchor=tk.W, fg="red", bg="white")
+
+status.pack()
+status.place(x=293, y=220)
+
+# si isValid es false el boton no se activa
+
 boton1 = tk.Button(frame, text="Calcular DFC", width=20, height=2, bg="DeepSkyBlue3", fg="white")
 boton1.pack()
 boton1.place(x=300, y=240)
 boton1.config(command=createTable)
 # boton1.config(command=calculate)
 
-status = tk.Label(frame, text="Status: ", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+boton_agregar_excel = tk.Button(frame, text="Agregar desde Excel", width=20, height=2, bg="DeepSkyBlue3", fg="white")
 
 def isValid():
   for entry in entries:
     if (entry.get() == ""):
-      status.config(text="Status: Error")
+      status.config(text="Debes llenar todos los campos")
+      status.place(x=200, y=220)
       return False
-  status.config(text="Status: ")
+  if (rf.get() == '' or rm.get() == '' or g.get() == ''): 
+    status.config(text="Debes llenar todos los campos")
+    status.place(x=200, y=220)
+    return False
+  status.config(text="")
   return True
 
+def validar_input(input_text):
+    if input_text.isdigit() or input_text == "":
+        return True
+    else:
+        return False
 
 
-def add():
+def add(nameCompany=None):
   
-  global addRange
+  global addRange, entries
   addRange += 1
-  entry = tk.Entry(frame, width=30, bg="gray90", validatecommand=isValid, validate="focusout")
+  entry = tk.Entry(frame, width=30, bg="gray90")
   entry.pack()
   entry.place(x=40, y=1+(addRange-1)*40)
-  entries.append(entry)  # Agregar referencia del Entry a la lista
+  status.config(text="")
+  if (nameCompany != None):
+    print(nameCompany)
+    entry.insert(0, nameCompany)
+    entries.append(entry)
+  else:
+    entries.append(entry)  # Agregar referencia del Entry a la lista
+  
+  print([entry.get() for entry in entries])
   # entries[0].insert(0, "AAPL")
+  
   if (addRange > 5):
-    print(frame.winfo_height())
+    # print(frame.winfo_height())
     frame.configure(height=frame.winfo_height()+40)
-    boton1.place(x=275, y=240+(addRange-5)*40)
+    boton1.place(x=300, y=240+(addRange-5)*40)
+    boton_agregar_excel.place(x=65, y=240+(addRange-5)*40)
+    status.place(x=100, y=220+(addRange-5)*40)
     myCanvas.configure(scrollregion=myCanvas.bbox("all"))
     # ventana.geometry("600x" + str(500+(addRange-5)*40))
     
   if (addRange > 2):
-    print("create")
+    # print("create")
     bottonDelete.config(state="active", bg="DeepSkyBlue3",  fg="white")
       
 
 def delete():
   global addRange
+  status.config(text="")
   if (addRange > 2):
     addRange -= 1
     entries[-1].destroy()  # Destruir el último Entry
     entries.pop()  # Eliminar referencia del Entry de la lista
     if (addRange > 4):
       frame.configure(height=frame.winfo_height()-40)
-      boton1.place(x=275, y=240+(addRange-5)*40)
+      boton1.place(x=300, y=240+(addRange-5)*40)
+      boton_agregar_excel.place(x=40, y=240+(addRange-5)*40)
+      status.place(x=100, y=220+(addRange-5)*40)
       myCanvas.configure(scrollregion=myCanvas.bbox("all"))
       # ventana.geometry("600x" + str(500+(addRange-5)*40))
     else:
       # frame.configure(height=frame.winfo_height()-40)
-      boton1.place(x=275, y=240)
+      boton1.place(x=300, y=240)
       # ventana.geometry("600x400")
     if (addRange <= 2):
-      print("desactive")
+      # print("desactive")
       bottonDelete.config(state="disabled")
       bottonDelete.config(bg="SkyBlue1",  fg="white")
 
@@ -253,9 +234,6 @@ label1.place(x=40, y=15)
 add()
 
 
-status.pack()
-status.place(x=40, y=55)
-
 bottonAdd = tk.Button(frame, text="+", width=2, height=1, bg="DeepSkyBlue3", fg="white")
 bottonAdd.pack()
 bottonAdd.config(command=add)
@@ -266,18 +244,17 @@ label2 = tk.Label(frame, text="Introduce la tasa libre de riesgo", bg="white")
 label2.pack()
 label2.place(x=285, y=15)
 
-# Ponermos un valor por defecto
-rf = tk.Entry(frame, width=30, bg="gray90")
-rf.insert(0, 0.04)
+validate_cmd = ventana.register(validar_input)
+
+rf = tk.Entry(frame, width=30, bg="gray90", validate="key", validatecommand=(validate_cmd, '%P'), textvariable=tk.StringVar(ventana, "0.04"))
 rf.pack()
 rf.place(x=285, y=40)
 
-label3 = tk.Label(frame, text="Introduce el rendimiento\n real del mercado (S&P 500)", bg="white")
+label3 = tk.Label(frame, text="Introduce el rendimiento real\ndel mercado", bg="white", justify="left")
 label3.pack()
-label3.place(x=280, y=80)
+label3.place(x=285, y=80)
 
-rm = tk.Entry(frame, width=30, bg="gray90")
-rm.insert(0, 0.1)
+rm = tk.Entry(frame, width=30, bg="gray90", validate="key", validatecommand=(validate_cmd, '%P'), textvariable=tk.StringVar(ventana, "0.1"))
 rm.pack()
 rm.place(x=285, y=120)
 
@@ -285,8 +262,7 @@ label4 = tk.Label(frame, text="Introduce el crecimiento perpetuo", bg="white")
 label4.pack()
 label4.place(x=285, y=160)
 
-g = tk.Entry(frame, width=30, bg="gray90")
-g.insert(0, 0.03)
+g = tk.Entry(frame, width=30, bg="gray90", validate="key", validatecommand=(validate_cmd, '%P'), textvariable=tk.StringVar(ventana, "0.03"))
 g.pack()
 g.place(x=285, y=185)
 
@@ -332,9 +308,47 @@ def ToExcelOrCsv():
   
   if file_path:  # Comprobar si se seleccionó un archivo
       df_result.to_excel(file_path, index=False)
-      print(f"El archivo se guardó correctamente en: {file_path}")
+      # print(f"El archivo se guardó correctamente en: {file_path}")
 
-# Llama a la función para ejecutarla
+def agregar_datos_desde_excel():
+    try:
+        ruta_archivo = filedialog.askopenfilename(filetypes=[("Archivos de Excel", "*.xlsx"), ("Todos los archivos", "*.*")])
+        if ruta_archivo:
+            # Llamar a la función para procesar el archivo Excel
+            procesar_datos_desde_excel(ruta_archivo)
+    except Exception as e:
+        print("Ocurrió un error al abrir el archivo:", e)
+
+def procesar_datos_desde_excel(ruta_archivo):
+  global addRange, entries
+  try:
+    # Cargar el archivo Excel en un DataFrame de pandas
+    datos_excel = pd.read_excel(ruta_archivo)
+    print(datos_excel)
+    print(len(entries))
+    if (len(entries) > 1 and entries[-1] != ""):
+      addRange = addRange - len(entries) + 1
+    else:
+      addRange = 1
+      entries = []
+    # Extraer los nombres de empresas (suponiendo que la columna se llama 'Nombre de la Empresa')
+    nombres_empresas = datos_excel['Ticker'].tolist()
+    
+    # Hacer algo con los nombres de empresas, como agregarlos a la lista de entradas o procesarlos de alguna otra manera
+    for nombre_empresa in nombres_empresas:
+        # Aquí puedes agregar la lógica para procesar cada nombre de empresa, como agregarlo a la interfaz1
+        print("Nombre de empresa:", nombre_empresa)
+        add(nombre_empresa)
+        pass
+    
+    print("Datos del archivo Excel procesados correctamente.")
+  except Exception as e:
+    print("Ocurrió un error al procesar el archivo Excel:", e)
+
+# Crear un botón para agregar datos desde un archivo Excel
+boton_agregar_excel.pack()
+boton_agregar_excel.place(x=65, y=240)
+boton_agregar_excel.config(command=agregar_datos_desde_excel)
 
 
 # crear una tabla
