@@ -147,11 +147,10 @@ def waccCalculator(ticker, rf, rm):
 # waccCalculator()
 
 #### Calculo el DFC ####
-def growthEstimates():
+def growthEstimates(ticker):
 
   # Definir la URL con el ticker (suponiendo que A4 es una variable con el ticker)
-  ticke = "AAPL" 
-  url = f"https://finance.yahoo.com/quote/{ticke}/analysis?ltr=1"
+  url = f"https://finance.yahoo.com/quote/{ticker}/analysis?ltr=1"
 
   # Añadir un User-Agent a la solicitud para simular una solicitud desde un navegador
   headers = {
@@ -287,11 +286,11 @@ def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
         # print('EBITDA: ', ebitda)
       
       if (hasEarnings):
-        earnings = ((format(getEarnings(ticker), '.2f')), ' %')
+        earnings = ((format(getEarnings(ticker), '.2f'))+  ' %')
         # print('Earnings: ', earnings)
       
       if (hasRoe):
-        roe = (format(getRoe(ticker), '.2f')) + ' %'
+        roe = ((format(getRoe(ticker), '.2f')) + ' %')
         # print('ROE: ', roe)
         
       options = [ebitda, earnings, roe]
@@ -301,26 +300,27 @@ def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
           finalsOptions.append(option)
 
       
-      resultDFC = dfc(ticker, g, rf, rm)
+      resultDFC = dfc(tickerStr[i], g, rf, rm)
       if (type(resultDFC) == str):
         return resultDFC
 
       arrayWithUSD = ['$ ' + str(value) for value in resultDFC[2]]
-      finalResult.append([tickerStr[i], resultDFC[0], resultDFC[1]] + arrayWithUSD + [resultDFC[3]] + [resultDFC[4]] + [resultDFC[5]] + [resultDFC[6]] + finalsOptions)
+      finalResult.append([tickerStr[i], resultDFC[0], resultDFC[1]] + arrayWithUSD + [resultDFC[3]] + [resultDFC[4]] + [resultDFC[5]] + [resultDFC[6]] + finalsOptions + [resultDFC[7]])
 
   return finalResult
 
-def dfc(ticker, g, rf, rm):
+def dfc(tickerStr, g, rf, rm):
   global balanceSheet
   global info
   global financials
   global incomeStmt
   global cashFlow
   
-  last_year_total_debt = getTotalDebt()
+  ticker = yf.Ticker(tickerStr)
   
+  last_year_total_debt = getTotalDebt()
   # Obtenemos la tasa de crecimiento de los FCF
-  growthFCF = growthEstimates()
+  growthFCF = growthEstimates(tickerStr)
   # growthFCF = float(growthFCF.replace('%', '')) / 100
   try:
     growthFCF = float(growthFCF.replace('%', '')) / 100
@@ -355,6 +355,8 @@ def dfc(ticker, g, rf, rm):
   
   # Calculo el valor terminal
   terminal_value = (FCFn[-1] * (1 + g)) / (wacc - g)
+  
+  FNFnLast = FCFn[-1]
   
   # Calculo el valor de la empresa
   # Actualizo el ultimo valor del FCFn sumandole el valor terminal
@@ -396,11 +398,25 @@ def dfc(ticker, g, rf, rm):
     return 'No se pudo obtener el precio de la acción'
   
   # Calulamos la diferencia entre el precio de la acción y el valor intrínseco de la acción
-  difference = intrinsic_value / price - 1
+  difference = (price - intrinsic_value) / intrinsic_value * 100
   
-  # return format((intrinsic_value), '.2f')
-  # print(tickerYf, wacc, printFCF, FCFn, equity_value, equity_value)
-  return [(format((wacc * 100), '.2f') + ' %'), ('$ ' + str(printFCF)), FCFn, ('$ ' + format(equity_value, '.0f')), price, format(intrinsic_value, '.2f'), format((difference * 100), '.2f')]
+  print(FCFn)
+  # al FCFn le quito el ultimo valor que es el valor terminal
+  FCFn.pop()
+  
+  # añado el ultimo valor del FCFn para mostrarlo en la tabla
+  FCFn.append(FNFnLast)
+  
+  print(FCFn)
+  FCFnPorcent = []
+  FCFnPorcent.append(format((FCFn[0] - printFCF) / FCFn[0] * 100, '.2f') + ' %')
+  for i in range(1, 5):
+    FCFnPorcent.append(format((FCFn[i] - FCFn[i - 1]) / FCFn[i] * 100, '.2f') + ' %')
+    
+  print(FCFnPorcent)
+    
+  # print('FCFnPorcent: ', FCFnPorcent)
+  return [(format((wacc * 100), '.2f') + ' %'), ('$ ' + str(printFCF)), FCFn, ('$ ' + format(equity_value, '.0f')), ('$ ' + str(price)), format(intrinsic_value, '.2f'), (format((difference), '.2f') + '%'), FCFnPorcent]
 
 
 def getBalanceSheet(ticker):

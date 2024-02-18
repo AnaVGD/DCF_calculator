@@ -2,7 +2,9 @@ import stat
 import tkinter as tk
 import time
 from tkinter import N, filedialog, ttk
+from turtle import st
 import pandas as pd
+import ttkthemes
 from dfc import arrDfc, dfc
 
 data = []
@@ -58,6 +60,7 @@ frame.pack()
 
 def createTable():
   global data
+  status.config(text="")
   for widget in tableFrame.winfo_children():
       widget.destroy()
 
@@ -79,7 +82,7 @@ def createTable():
       status.place(x=100, y=220)
       return
 
-  height = len(entries)
+  height = len(entries)*2
   columns = 12 + ebitda.get() + earnings.get() + roe.get()
   table = ttk.Treeview(tableFrame, columns=tuple(range(1, columns+1)), show="headings", height=height)
 
@@ -100,9 +103,51 @@ def createTable():
 
   table.pack(fill="both", expand=True)
 
-  for row in data:
-      table.insert('', 'end', values=row)
+  # for i, row in enumerate(data):
+  #     table.insert('', 'end', values=row)
+  #     table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]))
+  
+  style = ttkthemes.ThemedStyle()
+  # creamos una gama de colores de fondo para las filas dependiendo del valor de la columna 11
+  style.configure("LightRed.TTreeview", background="#ffcccc")  # Light red for values > 20
+  style.configure("Red.TTreeview", background="#ff6666")  # Red for values > 25
+  style.configure("DarkRed.TTreeview", background="#b30000")  # Dark red for values > 50
+  style.configure("LightGreen.TTreeview", background="#ccffcc")  # Light green for values < 0
+  style.configure("Green.TTreeview", background="#66ff66")  # Green for values < -5
+  style.configure("DarkGreen.TTreeview", background="#00b300")  # Dark green for values < -10
+
+  for i, row in enumerate(data):
+      second_value = float(row[11].replace('%', ''))
+      if second_value > 100:  # Verificar si el segundo valor es mayor que 50
+          table.insert('', 'end', values=row, tags=('DarkRed',))
+          table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]), tags=('DarkRed',))
+      elif second_value > 50:  # Verificar si el segundo valor es mayor que 25
+          table.insert('', 'end', values=row, tags=('Red',))
+          table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]), tags=('Red',))
+      elif second_value > 0:  # Verificar si el segundo valor es mayor que 20
+          table.insert('', 'end', values=row, tags=('LightRed',))
+          table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]), tags=('LightRed',))
+      elif second_value < -100:  # Verificar si el segundo valor es menor que -10
+          table.insert('', 'end', values=row, tags=('DarkGreen',))
+          table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]), tags=('DarkGreen',))
+      elif second_value < -50:  # Verificar si el segundo valor es menor que -5
+          table.insert('', 'end', values=row, tags=('Green',))
+          table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]), tags=('Green',))
+      elif second_value < 0:  # Verificar si el segundo valor es menor que 0
+          table.insert('', 'end', values=row, tags=('LightGreen',))
+          table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]), tags=('LightGreen',))
+      else:
+          table.insert('', 'end', values=row)
+          table.insert('', i * 2 + 1, values=('', '', '') + tuple(row[-1][0:]))
       
+
+  table.tag_configure("LightRed", background="#ffcccc")
+  table.tag_configure("Red", background="#ff6666")
+  table.tag_configure("DarkRed", background="#b30000", foreground="white")
+  table.tag_configure("LightGreen", background="#ccffcc")
+  table.tag_configure("Green", background="#66ff66" )
+  table.tag_configure("DarkGreen", background="#00b300", foreground="white")
+  
   if (len(data) > 0):
     buttonXLS = tk.Button(exelFrame, text="Exportar a Excel", width=20, height=2, bg="DeepSkyBlue3", fg="white")
     buttonXLS.pack()
@@ -168,18 +213,24 @@ def add(nameCompany=None):
   entry.place(x=40, y=1+(addRange-1)*40)
   status.config(text="")
   if (nameCompany != None):
-    print(nameCompany)
+
     entry.insert(0, nameCompany)
     entries.append(entry)
+    
   else:
     entries.append(entry)  # Agregar referencia del Entry a la lista
   
-  print([entry.get() for entry in entries])
   # entries[0].insert(0, "AAPL")
   
+
+  
   if (addRange > 5):
-    # print(frame.winfo_height())
-    frame.configure(height=frame.winfo_height()+40)
+    if (nameCompany == None):
+      frame.configure(height=frame.winfo_height()+40)
+    else:
+      frame.configure(height=frame.winfo_height()+(addRange-5)*40)
+    print(addRange)
+    print(frame.winfo_height())
     boton1.place(x=300, y=240+(addRange-5)*40)
     boton_agregar_excel.place(x=65, y=240+(addRange-5)*40)
     status.place(x=100, y=220+(addRange-5)*40)
@@ -297,7 +348,32 @@ def ToExcelOrCsv():
     options.append("Margen de beneficio bruto")
   if (roe.get() == 1):
     options.append("ROE")
-  df_result = pd.DataFrame(data, columns=['Ticker', 'WACC', 'FCF 2023', 'FCF 2024', 'FCF 2025', 'FCF 2026', 'FCF 2027', 'FCF 2028', 'Valor de la empresa', 'Precio de la acción', 'Valor intrínseco de la acción', 'Diferencia'] + options)
+  
+  newLits = []
+  # recorremos data y a cada fila le quitamos el último elemento y lo guardamos en una nueva lista
+  for i in range(len(data)):
+    # guardonel ultimo elemento de cada fila en una lista
+    newLits.append(data[i][-1])
+    
+    # qutiando el último elemento de cada fila
+    data[i] = data[i][:-1]
+  
+  # ayadimos debajo de cada fila de data una fila con los valores de la lista newLita
+  
+  # Inserto una columna en la posición 3 con el primer elemento de la lista newLits
+  # data[0].insert(3, newLits[0][0])
+  # data[0].insert(5, newLits[0][1])
+  # data[0].insert(7, newLits[0][2])
+  # data[0].insert(9, newLits[0][3])
+  
+  for i in range(len(data)):
+    for j in range(len(newLits[i])):
+      data[i].insert(4 + 2*j, newLits[i][j])
+    
+  
+  # print(newLits)
+  
+  df_result = pd.DataFrame(data, columns=['Ticker', 'WACC', 'FCF 2023', 'FCF 2024', 'FCN', 'FCF 2025', 'FCN', 'FCF 2026',  'FCN','FCF 2027', 'FCN', 'FCF 2028', 'FCN', 'Valor de la empresa', 'Precio de la acción', 'Valor intrínseco de la acción', 'Diferencia'] + options)
   
   # Crear una ventana Tkinter sin mostrarla
   root = tk.Tk()
@@ -324,8 +400,6 @@ def procesar_datos_desde_excel(ruta_archivo):
   try:
     # Cargar el archivo Excel en un DataFrame de pandas
     datos_excel = pd.read_excel(ruta_archivo)
-    print(datos_excel)
-    print(len(entries))
     if (len(entries) > 1 and entries[-1] != ""):
       addRange = addRange - len(entries) + 1
     else:
