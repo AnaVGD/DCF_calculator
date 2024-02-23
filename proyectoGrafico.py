@@ -1,11 +1,9 @@
-import stat
+
 import tkinter as tk
-import time
 from tkinter import N, filedialog, ttk
-from turtle import st
 import pandas as pd
 import ttkthemes
-from dfc import arrDfc, dfc
+from dfc import arrDfc
 
 data = []
 addRange = 1
@@ -29,7 +27,7 @@ myScrollbar = ttk.Scrollbar(mainFrame, orient=tk.VERTICAL, command=myCanvas.yvie
 myScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
 myCanvas.configure(yscrollcommand=myScrollbar.set)
-myCanvas.bind('<Configure>', lambda e: myCanvas.configure(scrollregion = myCanvas.bbox("all")))
+
 
 secondFrame = tk.Frame(myCanvas, bg="white")
 
@@ -46,7 +44,8 @@ def center_window(event=None):
     myCanvas.create_window((x, 0), window=secondFrame, anchor="n")
     myCanvas.configure(scrollregion=myCanvas.bbox("all"))
 
-
+# myCanvas.bind('<Configure>', lambda e: myCanvas.configure(scrollregion = myCanvas.bbox("all")))
+myCanvas.bind("<Configure>", lambda e: center_window())
 center_window()
 
 myCanvas.bind("<Configure>", center_window)
@@ -64,7 +63,7 @@ def createTable():
   for widget in tableFrame.winfo_children():
       widget.destroy()
 
-  start_time = time.time()
+  # start_time = time.time()
 
   entry_values = [entry.get() for entry in entries]
   if entry_values.count("") > 0:
@@ -72,10 +71,10 @@ def createTable():
       status.place(x=293, y=220)
       return
 
-  data = arrDfc(entry_values, float(g.get()), float(rf.get()), float(rm.get()), ebitda.get(), earnings.get(), roe.get())
-  end_time = time.time()
-  elapsed_time = end_time - start_time
-  print(f"Tiempo transcurrido: {elapsed_time} segundos")
+  data = arrDfc(entry_values, float(g.get()), float(rf.get()), float(rm.get()), ebitda.get(), earnings.get(), roe.get(), per.get())
+  # end_time = time.time()
+  # elapsed_time = end_time - start_time
+  # print(f"Tiempo transcurrido: {elapsed_time} segundos")
 
   if type(data) == str:
       status.config(text=f"{data} comprueba que los datos sean correctos")
@@ -83,7 +82,7 @@ def createTable():
       return
 
   height = len(entries)*2
-  columns = 12 + ebitda.get() + earnings.get() + roe.get()
+  columns = 12 + ebitda.get() + earnings.get() + roe.get() + per.get()
   table = ttk.Treeview(tableFrame, columns=tuple(range(1, columns+1)), show="headings", height=height)
 
   for i in range(1, columns+1):
@@ -97,6 +96,8 @@ def createTable():
       headings.append("Margen de beneficio bruto")
   if roe.get() == 1:
       headings.append("ROE")
+  if per.get() == 1:
+      headings.append("PER")
 
   for i, heading in enumerate(headings, start=1):
       table.heading(i, text=heading)
@@ -148,11 +149,19 @@ def createTable():
   table.tag_configure("Green", background="#66ff66" )
   table.tag_configure("DarkGreen", background="#00b300", foreground="white")
   
-  if (len(data) > 0):
+  print(type(data))
+  # print(data)
+  if (len(data) > 0 and type(data) != str):
     buttonXLS = tk.Button(exelFrame, text="Exportar a Excel", width=20, height=2, bg="DeepSkyBlue3", fg="white")
     buttonXLS.pack()
     buttonXLS.place(x=200, y=10)
     buttonXLS.config(command=ToExcelOrCsv)
+
+  # Actualizar el scrollbar
+  # center_window()
+  # myCanvas.update_idletasks()
+  # myCanvas.configure(scrollregion=myCanvas.bbox("all"))
+  # myScrollbar.pack(side=tk.RIGHT, fill=tk.Y)
       
 def treeview_sort_column(tv, col, reverse):
 
@@ -205,7 +214,6 @@ def validar_input(input_text):
 
 
 def add(nameCompany=None):
-  
   global addRange, entries
   addRange += 1
   entry = tk.Entry(frame, width=30, bg="gray90")
@@ -332,6 +340,11 @@ check3 = tk.Checkbutton(frame, text="Mostrar ROE", variable=roe, onvalue=1, bg="
 check3.pack()
 check3.place(x=500, y=95)
 
+per = tk.IntVar()
+check4 = tk.Checkbutton(frame, text="Mostrar el PER", variable=per, onvalue=1, bg="white")
+check4.pack()
+check4.place(x=500, y=135)
+
 
 tableFrame = tk.Frame(secondFrame, width=500, height=70, bg="white")
 tableFrame.pack()
@@ -348,6 +361,8 @@ def ToExcelOrCsv():
     options.append("Margen de beneficio bruto")
   if (roe.get() == 1):
     options.append("ROE")
+  if (per.get() == 1):
+    options.append("PER")
   
   newLits = []
   # recorremos data y a cada fila le quitamos el último elemento y lo guardamos en una nueva lista

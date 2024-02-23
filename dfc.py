@@ -5,10 +5,6 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import json
 import pandas as pd
-# from alpha_vantage.timeseries import TimeSeries
-
-# ts = TimeSeries(key='2TRGKH45LL2XZRE3',rapidapi=True)
-
 
 balanceSheet = {}
 info = {}
@@ -16,20 +12,8 @@ financials = {}
 incomeStmt = {}
 cashFlow = {}
 
-
-# Obtenemos el valor de la deuda total (total debt) del ultimo año de yahoo finance
-def getTotalDebt():
-  d = balanceSheet.loc['Total Debt']
-  i = 0
-  last_year_total_debt = d.iloc[i]
-  while (math.isnan(d.iloc[i]) and i < len(d) - 1):
-    i += 1
-    last_year_total_debt = d.iloc[i]
-  return last_year_total_debt
-
-
 #### Calcular WACC ####
-def waccCalculator(ticker, rf, rm):
+def waccCalculator(rf, rm):
   
   last_year_total_debt = getTotalDebt()
 
@@ -51,21 +35,19 @@ def waccCalculator(ticker, rf, rm):
     e = info['marketCap']
   except:
     return 'No se pudo obtener la capitalización bursátil de la acción'
-  # print('Capitalización bursátil: ', e)
 
   # 7. Calculamos la deuda total (E + D)
   total_debt_ED = e + last_year_total_debt
-  # print('Deuda total: ', total_debt_ED)
+
 
   # 8. Calculamos el total de los fondos propios (ke * (E / (E + D)))
   total_equity = ke * (e / total_debt_ED)
-  # print('Total de los fondos propios: ', format((total_equity * 100), '.2f'), '%')
-  # print('')
+
 
   # Calculo del coste de la deuda
   # Obtenemos el gasto por interese (Interest Expense) del ultimo año de yahoo finance
   interest_expense = 0
-  # print(financials.loc['Interest Expense'])
+
   try:
     interest_expense = financials.loc['Interest Expense']
     i = 0
@@ -87,7 +69,15 @@ def waccCalculator(ticker, rf, rm):
       i += 1
       last_year_current_debt = current_debt.iloc[i]
   except:
-    return 'No se pudo obtener la deuda a corto plazo de la acción'
+    try:
+      current_debt = balanceSheet.loc['Current Deferred Liabilities']
+      i = 0
+      last_year_current_debt = current_debt.iloc[i]
+      while math.isnan(current_debt.iloc[i]):
+        i += 1
+        last_year_current_debt = current_debt.iloc[i]
+    except:
+      return 'No se pudo obtener la deuda a corto plazo de la acción'
   # print('Deuda a corto plazo: ', last_year_current_debt)
 
   # 3. obtener la deuda a largo plazo (long term debt) del ultimo año de yahoo finance
@@ -140,13 +130,11 @@ def waccCalculator(ticker, rf, rm):
 
   #### Calculo del WACC ####
   # 1. Calculo el WACC
-  wacc = total_equity + total_debt_cost
+  return total_equity + total_debt_cost
   # print('\nWACC: ', format((wacc * 100), '.2f'), '%')
-  return wacc
 
-# waccCalculator()
 
-#### Calculo el DFC ####
+
 def growthEstimates(ticker):
 
   # Definir la URL con el ticker (suponiendo que A4 es una variable con el ticker)
@@ -245,14 +233,13 @@ def getRoe(ticker):
     return 'No se pudo obtener el equity de la acción'
   return (last_year_net_income / last_year_equity) * 100
 
-def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
+def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe, hasPer):
   global balanceSheet
   global info
   global financials
   global incomeStmt
   global cashFlow
   finalResult = []
-  print('Ticker: ', tickerStr)
   
   for i in range(0, len(tickerStr)):
     if (tickerStr[i] != ''):
@@ -260,6 +247,7 @@ def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
       ebitda = 0
       earnings = 0
       roe = 0
+      per = 0
       
       balanceSheet = getBalanceSheet(ticker)
       info = getInfo(ticker)
@@ -291,9 +279,11 @@ def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
       
       if (hasRoe):
         roe = ((format(getRoe(ticker), '.2f')) + ' %')
-        # print('ROE: ', roe)
+
+      if (hasPer):
+        per = format(info['trailingPE'], '.2f')
         
-      options = [ebitda, earnings, roe]
+      options = [ebitda, earnings, roe, per]
       finalsOptions = []
       for option in options:
         if (option != 0):
@@ -304,10 +294,12 @@ def arrDfc(tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe):
       if (type(resultDFC) == str):
         return resultDFC
 
-      arrayWithUSD = ['$ ' + str(value) for value in resultDFC[2]]
-      finalResult.append([tickerStr[i], resultDFC[0], resultDFC[1]] + arrayWithUSD + [resultDFC[3]] + [resultDFC[4]] + [resultDFC[5]] + [resultDFC[6]] + finalsOptions + [resultDFC[7]])
+      arrayWithUSD = [('$ ' + '{:,.0f}'.format(value).replace(',', '.')) for value in resultDFC[2]]
+      finalResult.append([tickerStr[i].upper(), resultDFC[0], resultDFC[1]] + arrayWithUSD + [resultDFC[3]] + [resultDFC[4]] + [resultDFC[5]] + [resultDFC[6]] + finalsOptions + [resultDFC[7]])
 
   return finalResult
+
+
 
 def dfc(tickerStr, g, rf, rm):
   global balanceSheet
@@ -315,8 +307,6 @@ def dfc(tickerStr, g, rf, rm):
   global financials
   global incomeStmt
   global cashFlow
-  
-  ticker = yf.Ticker(tickerStr)
   
   last_year_total_debt = getTotalDebt()
   # Obtenemos la tasa de crecimiento de los FCF
@@ -327,10 +317,8 @@ def dfc(tickerStr, g, rf, rm):
   except:
     return growthFCF
   
-
-  
   # Obtenemos la tasa de descuento (WACC)
-  wacc = waccCalculator(ticker, rf, rm)
+  wacc = waccCalculator(rf, rm)
   # print('WACC: ', wacc)
   if (type(wacc) != float):
     return wacc
@@ -416,8 +404,20 @@ def dfc(tickerStr, g, rf, rm):
   print(FCFnPorcent)
     
   # print('FCFnPorcent: ', FCFnPorcent)
-  return [(format((wacc * 100), '.2f') + ' %'), ('$ ' + str(printFCF)), FCFn, ('$ ' + format(equity_value, '.0f')), ('$ ' + str(price)), format(intrinsic_value, '.2f'), (format((difference), '.2f') + '%'), FCFnPorcent]
+  return [(format((wacc * 100), '.2f') + ' %'), ('{:,.0f}'.format(printFCF).replace(',', '.')), FCFn, ('$ ' + '{:,.0f}'.format(equity_value, '.0f').replace(',', '.')), ('$ ' + str(price)), ('$ ' + format(intrinsic_value, '.2f')), (format((difference), '.2f') + '%'), FCFnPorcent]
 
+def getTotalDebt():
+  try:
+    global balanceSheet
+    d = balanceSheet.loc['Total Debt']
+    i = 0
+    last_year_total_debt = d.iloc[i]
+    while (math.isnan(d.iloc[i]) and i < len(d) - 1):
+      i += 1
+      last_year_total_debt = d.iloc[i]
+    return last_year_total_debt
+  except:
+    return 'No se pudo obtener la deuda total de la acción'
 
 def getBalanceSheet(ticker):
   try:
@@ -429,7 +429,7 @@ def getIncomeStmt(ticker):
   try:
     return ticker.income_stmt
   except:
-    return 'No se pudo obtener el estado de resultados de la acción'
+    return 'No se pudo obtener el estado de los ingresos de la acción'
 
 def getInfo(ticker):
   try:
@@ -448,4 +448,3 @@ def getFinancials(ticker):
     return ticker.financials
   except:
     return 'No se pudo obtener los estados financieros de la acción'
-
