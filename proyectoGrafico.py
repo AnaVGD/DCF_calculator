@@ -1,3 +1,4 @@
+from email import message
 import threading
 import tkinter as tk
 from tkinter import N, filedialog, ttk
@@ -14,7 +15,6 @@ ventana = tk.Tk()
 ventana.title("Calculadora de DFC")
 # ventana.state("zoomed")
 ventana.minsize(1500, 700)
-
 ventana.configure(background="white")
 
 mainFrame = tk.Frame(ventana)
@@ -68,7 +68,7 @@ myCanvas.bind("<Configure>", center_window)
 
 style = ttkthemes.ThemedStyle()
 
-exelFrame = tk.Frame(secondFrame, width=500, height=70, bg='blue')
+exelFrame = tk.Frame(secondFrame, width=500, height=70, bg='white')
 
 def createTable():
   global data
@@ -285,23 +285,44 @@ bottonDelete.config(command=delete)
 bottonDelete.place(x=240, y=50)
 bottonDelete.config(state="disabled")
 
+def enter(event, message, label):
+    global tooltip
+    x, y, _, _ = check4.bbox("insert")
+    x += label.winfo_rootx() + 25
+    y += label.winfo_rooty() + 20
+    tooltip = tk.Toplevel(check4)
+    tooltip.wm_overrideredirect(True)
+    tooltip.wm_geometry(f"+{x}+{y}")
+    label = tk.Label(tooltip, text=message, bg="white", relief="solid", borderwidth=1,justify=tk.LEFT)
+    label.pack()
+
+def leave(event):
+    global tooltip
+    if tooltip:
+        tooltip.destroy()
 
 label1 = tk.Label(frame, text="Introduce el ticker de la empresa", bg="white",)
 label1.pack()
 label1.place(x=40, y=15)
 
-add()
+tickerMessage = "El ticker de la empresa es el símbolo que se utiliza para identificar una empresa en el mercado de valores, \ncomo AAPL para Apple Inc. o MSFT para Microsoft Corporation."
+label1.bind("<Enter>", lambda event: enter(event, tickerMessage, label1))
+label1.bind("<Leave>", leave)
 
+add()
 
 bottonAdd = tk.Button(frame, text="+", width=2, height=1, bg="DeepSkyBlue3", fg="white")
 bottonAdd.pack()
 bottonAdd.config(command=add)
 bottonAdd.place(x=240, y=15)
 
-
 label2 = tk.Label(frame, text="Introduce la tasa libre de riesgo", bg="white")
 label2.pack()
 label2.place(x=285, y=15)
+
+rfMessage = "La tasa libre de riesgo es el rendimiento que se espera de una inversión libre de riesgo, \ncomo los bonos del Tesoro de EE. UU. a 10 años (4%)"
+label2.bind("<Enter>", lambda event: enter(event, rfMessage, label2))
+label2.bind("<Leave>", leave)
 
 validate_cmd = ventana.register(validar_input)
 
@@ -313,6 +334,10 @@ label3 = tk.Label(frame, text="Introduce el rendimiento real\ndel mercado", bg="
 label3.pack()
 label3.place(x=285, y=80)
 
+rmMessage = "El rendimiento real del mercado es el rendimiento que se espera de una inversión en el mercado de valores, \ncomo el S&P 500 (10%)"
+label3.bind("<Enter>", lambda event: enter(event, rmMessage, label3))
+label3.bind("<Leave>", leave)
+
 rm = tk.Entry(frame, width=30, bg="gray90", validate="key", validatecommand=(validate_cmd, '%P'), textvariable=tk.StringVar(ventana, "0.1"))
 rm.pack()
 rm.place(x=285, y=120)
@@ -320,6 +345,10 @@ rm.place(x=285, y=120)
 label4 = tk.Label(frame, text="Introduce el crecimiento perpetuo", bg="white")
 label4.pack()
 label4.place(x=285, y=160)
+
+gMessage = "El crecimiento perpetuo es el crecimiento constante que se espera de una empresa a largo plazo, \ncomo el crecimiento del PIB (3%)"
+label4.bind("<Enter>", lambda event: enter(event, gMessage, label4))
+label4.bind("<Leave>", leave)
 
 g = tk.Entry(frame, width=30, bg="gray90", validate="key", validatecommand=(validate_cmd, '%P'), textvariable=tk.StringVar(ventana, "0.03"))
 g.pack()
@@ -330,25 +359,48 @@ check = tk.Checkbutton(frame, text="Mostrar EBITDA", bg="white", variable=ebitda
 check.pack()
 check.place(x=500, y=15)
 
+ebitdaMessage = "El EBITDA (Earnings Before Interest, Taxes, Depreciation and Amortization) es una medida de la rentabilidad de una empresa, \nantes de intereses, impuestos, depreciación y amortización."
+check.bind("<Enter>", lambda event: enter(event, ebitdaMessage, check))
+check.bind("<Leave>", leave)
+
 earnings = tk.IntVar()
 check2 = tk.Checkbutton(frame, text="Mostrar margen de ganacias bruto", variable=earnings, onvalue=1, bg="white")
 check2.pack()
 check2.place(x=500, y=55)
+
+earningsMessage = "El margen de ganancias bruto es la relación entre las ganancias brutas y los ingresos totales. \nUn margen de ganancias bruto más alto puede indicar que la empresa es más eficiente."
+check2.bind("<Enter>", lambda event: enter(event, earningsMessage, check2))
+check2.bind("<Leave>", leave)
 
 roe = tk.IntVar()
 check3 = tk.Checkbutton(frame, text="Mostrar ROE", variable=roe, onvalue=1, bg="white")
 check3.pack()
 check3.place(x=500, y=95)
 
+roeMessage = "El ROE (Return on Equity) es la relación entre las ganancias netas y el patrimonio neto de la empresa. \nUn ROE más alto puede indicar que la empresa es más eficiente."
+check3.bind("<Enter>", lambda event: enter(event, roeMessage, check3))
+check3.bind("<Leave>", leave)
+
 per = tk.IntVar()
 check4 = tk.Checkbutton(frame, text="Mostrar el PER", variable=per, onvalue=1, bg="white")
 check4.pack()
 check4.place(x=500, y=135)
 
+# Asociar el tooltip con el Checkbutton
+perMessage = (
+    "El PER (Price Earnings Ratio) es la relación entre el precio de una acción y \n"
+    "las ganancias por acción de la empresa. Un PER más alto puede indicar \n"
+    "que la acción está sobrevalorada, mientras que un PER más bajo puede \n"
+    "indicar que la acción está infravalorada.\n"
+    " - PER bajo: 0-10\n"
+    " - PER medio: 10-20\n"
+    " - PER alto: +20"
+)
+check4.bind("<Enter>", lambda event: enter(event, perMessage, check4))
+check4.bind("<Leave>", leave)
 
 tableFrame = tk.Frame(secondFrame, width=500, height=70, bg="white")
 tableFrame.pack(padx=(20, 0))
-
 
 exelFrame.pack()
 
