@@ -24,3 +24,18 @@ También se puede descargar la carpeta comprimida en la que encontrara el ejecut
 Si se prefiere, se puede descargar el código fuente y ejecutarlo en un entorno de desarrollo.
 
 Los archivos los puede encontrar en la sección de [releases](https://github.com/AnaVGD/DCF_calculator/releases/tag/DCF-Calculator-v-1).
+
+
+## Uso
+Para poder usar la calculadora de DCF es necesario introducir los siguientes datos:
+
+1. Ticker o Tickers de las empresas a valorar, puede intrudicir un conjuto de tickers a partir de un archivo .xlsx. donde en la primera columna se encuentren los tickers.
+2. Tasa libre de riesgo.
+3. Rendimento del mercado.
+4. Creimiento perpetuo.
+
+De forma opcional se puede seleccion que le muestar el EBITDA, el margen de ganaica, el ROE y el PER.
+
+
+
+Tras introducir los datos, debe clicar en el botón "Calcular" y se le mostrara una tabla con los resultados.
