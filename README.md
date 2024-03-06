@@ -12,3 +12,7 @@ Calculadora de DCF como su nombre indica es una calculadora que permite valorar 
 Existen dos formas de ejecutar la calculadora:
 
 ### 1. Ejecutable.exe
+> [!CAUTION]
+> Si quiere descargar solo este ejecutable debe desactivar el antivirus.  
+
+Descargar el ejecutable de la última versión de la calculadora desde el aparatado de [releases](https://github.com/AnaVGD/DCF_calculator/releases/tag/DCF-Calculator-v-1)
