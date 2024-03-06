@@ -36,6 +36,6 @@ Para poder usar la calculadora de DCF es necesario introducir los siguientes dat
 
 De forma opcional se puede seleccion que le muestar el EBITDA, el margen de ganaica, el ROE y el PER.
 
-
+![Entrada1](https://github.com/AnaVGD/DCF_calculator/assets/61556133/6daefbba-d521-40fd-aab5-01345e5ec101)
 
 Tras introducir los datos, debe clicar en el botón "Calcular" y se le mostrara una tabla con los resultados.
