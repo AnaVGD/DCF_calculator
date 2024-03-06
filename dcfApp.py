@@ -3,13 +3,13 @@ import tkinter as tk
 from tkinter import filedialog
 import pandas as pd
 import ttkthemes
-from dfcArrayCalculator import DfcArrayCalculator
+from dcfArrayCalculator import DcfArrayCalculator
 
 
-class DFCApp:
+class DcfApp:
     def __init__(self, master):
         """
-        Inicializa de DFCApp.
+        Inicializa de DcfApp.
 
         Args:
             master: El widget principal de la aplicación.
@@ -24,10 +24,10 @@ class DFCApp:
         """Lista que contiene los campos de entrada para el ticker de la empresa."""
         self.ventana = master
         """Ventana principal de la aplicación."""
-        self.replayDFC = 0
-        """Número de veces que se ha ejecutado el cálculo DFC."""
+        self.replayDCF = 0
+        """Número de veces que se ha ejecutado el cálculo DCF."""
         self.progress = None
-        """Barra de progreso para el cálculo DFC."""
+        """Barra de progreso para el cálculo DCF."""
         self.buttonXLS = None
         """Botón para exportar a Excel."""
 
@@ -37,7 +37,7 @@ class DFCApp:
         """
         Crea los widgets para la interfaz de la aplicación.
         """
-        self.ventana.title("Calculadora de DFC")
+        self.ventana.title("Calculadora de DCF")
         self.ventana.minsize(1500, 700)
         self.ventana.configure(background="white")
 
@@ -63,7 +63,7 @@ class DFCApp:
         self.secondFrame = tk.Frame(self.myCanvas, bg="white")
 
         self.title = tk.Label(
-            self.secondFrame, text="Calculadora de DFC", font=("Arial", 20), bg="white"
+            self.secondFrame, text="Calculadora de DCF", font=("Arial", 20), bg="white"
         )
         self.title.pack()
 
@@ -83,7 +83,7 @@ class DFCApp:
 
         self.boton1 = tk.Button(
             self.frame,
-            text="Calcular DFC",
+            text="Calcular DCF",
             width=20,
             height=2,
             bg="DeepSkyBlue3",
@@ -407,7 +407,7 @@ class DFCApp:
 
     def create_table(self):
         """
-        Crea una tabla con los resultados del cálculo DFC.
+        Crea una tabla con los resultados del cálculo DCF.
         """
         self.status.config(text="")
 
@@ -433,8 +433,8 @@ class DFCApp:
             return
 
         self.boton1.config(state="disabled")
-        dataDfcResult = DfcArrayCalculator()
-        self.data = dataDfcResult.arrDfc(
+        dataDcfResult = DcfArrayCalculator()
+        self.data = dataDcfResult.arrDcf(
             entry_values,
             float(self.g.get()),
             float(self.rf.get()),
@@ -447,10 +447,8 @@ class DFCApp:
 
         tickersError = []
         for i in range(len(self.data)):
-            print(self.data[i])
             if self.data[i][1] == "Error":
                 tickersError.append(self.data[i][0])
-            print(tickersError)
 
         height = len(self.entries) - (len(tickersError))
         if height > 0:
@@ -607,16 +605,16 @@ class DFCApp:
 
     def threaded_create_table(self):
         """
-        Inicia un hilo para crear la tabla de resultados de DFC.
+        Inicia un hilo para crear la tabla de resultados de DCF.
         """
-        self.replayDFC += 1
+        self.replayDCF += 1
         self.progressFrame = tk.Frame(
             self.ventana, bg="white", borderwidth=2, relief="solid"
         )
         self.progressFrame.config(width=300, height=400)
         self.progressFrame.pack()
         self.progressMessage = tk.Label(
-            self.progressFrame, text="Cargando...\n Espere porfavor", bg="white"
+            self.progressFrame, text="Cargando...\n Espere por favor", bg="white"
         )
         self.progressMessage.pack()
         self.progressMessage.config(width=20, height=5)
@@ -624,7 +622,7 @@ class DFCApp:
             self.progressFrame, length=200, mode="indeterminate"
         )
         self.progress.pack(padx=10, pady=(0, 10))
-        if self.replayDFC > 1:
+        if self.replayDCF > 1:
             self.destroy_button()
 
         self.progressFrame.place(
@@ -691,7 +689,7 @@ class DFCApp:
         file_path = filedialog.asksaveasfilename(
             defaultextension=".xlsx",
             filetypes=[("Excel files", "*.xlsx")],
-            initialfile="dfc",
+            initialfile="dcf",
         )
 
         if file_path:
@@ -751,7 +749,7 @@ def main():
     Función principal para iniciar la aplicación.
     """
     root = tk.Tk()
-    app = DFCApp(root)
+    app = DcfApp(root)
     root.mainloop()
 
 

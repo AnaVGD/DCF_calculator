@@ -7,7 +7,7 @@ Documentación de la clase FinanceAnalyzer
 """
 
 
-class DfcCalculator:
+class DcfCalculator:
     def __init__(self, ticker=None):
         """
         Inicializa el objeto FinanceAnalyzer con los datos financieros del ticker especificado.
@@ -152,9 +152,7 @@ class DfcCalculator:
             float: El ROE de la acción.
         """
         try:
-            last_year_net_income = self.getLastYearValue(
-                self.incomeStmt, "Net Income"
-            )
+            last_year_net_income = self.getLastYearValue(self.incomeStmt, "Net Income")
         except Exception as e:
             raise Exception("No se pudo obtener el net income de la acción") from e
 
@@ -201,9 +199,7 @@ class DfcCalculator:
         except:
             try:
                 if label == "Current Debt And Capital Lease Obligation":
-                    return self.getLastYearValue(
-                        data, "Current Deferred Liabilities"
-                    )
+                    return self.getLastYearValue(data, "Current Deferred Liabilities")
             except:
                 raise Exception(f"No se pudo obtener {label} de la acción")
             raise Exception(f"No se pudo obtener {label} de la acción")
@@ -310,9 +306,9 @@ class DfcCalculator:
 
         return total_equity + total_debt_cost
 
-    def dfc(self, tickerStr, g, rf, rm):
+    def dcf(self, tickerStr, g, rf, rm):
         """
-        Calcula el valor intrínseco de una acción utilizando el modelo de descuento de flujos de efectivo (DFC).
+        Calcula el valor intrínseco de una acción utilizando el modelo de descuento de flujos de efectivo (DCF).
 
         Args:
             tickerStr (str): El símbolo de ticker de la acción.

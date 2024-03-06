@@ -1,10 +1,10 @@
 import yfinance as yf
-from dfcCalculator import DfcCalculator
+from dcfCalculator import DcfCalculator
 
 
-class DfcArrayCalculator:
+class DcfArrayCalculator:
     def __init__(self):
-        """Inicializa el objeto DfcArrayCalculator."""
+        """Inicializa el objeto DcfArrayCalculator."""
         pass
 
     def getValue(self, ticker, method, format, percentage):
@@ -31,7 +31,7 @@ class DfcArrayCalculator:
         except Exception as e:
             raise Exception(f"No se pudo obtener el valor de {ticker}\n {e}") from e
 
-    def arrDfc(self, tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe, hasPer):
+    def arrDcf(self, tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe, hasPer):
         """
         Calcula los valores DCF para una lista de tickers.
 
@@ -51,13 +51,13 @@ class DfcArrayCalculator:
         finalResult = []
 
         for ticker in filter(None, tickerStr):
-            dfcCalculator = DfcCalculator(yf.Ticker(ticker))
+            dcfCalculator = DcfCalculator(yf.Ticker(ticker))
 
             values = [
-                (hasEbitda, dfcCalculator.getEbitda, False, False),
-                (hasEarnings, dfcCalculator.getEarnings, True, True),
-                (hasRoe, dfcCalculator.getRoe, True, True),
-                (hasPer, dfcCalculator.getPer, True, False),
+                (hasEbitda, dcfCalculator.getEbitda, False, False),
+                (hasEarnings, dcfCalculator.getEarnings, True, True),
+                (hasRoe, dcfCalculator.getRoe, True, True),
+                (hasPer, dcfCalculator.getPer, True, False),
             ]
 
             finalsOptions = []
@@ -72,19 +72,18 @@ class DfcArrayCalculator:
                         finalsOptions = ["Error"]
                         break
 
-            resultDFC = dfcCalculator.dfc(ticker, g, rf, rm)
-            if isinstance(resultDFC, str):
-                print(resultDFC)
+            resultDCF = dcfCalculator.dcf(ticker, g, rf, rm)
+            if isinstance(resultDCF, str):
                 finalResult.append([ticker.upper(), "Error"])
             else:
                 arrayWithUSD = [
                     ("$ " + "{:,.0f}".format(value).replace(",", "."))
-                    for value in resultDFC[2]
+                    for value in resultDCF[2]
                 ]
                 finalResult.append(
-                    [ticker.upper(), resultDFC[0], resultDFC[1]]
+                    [ticker.upper(), resultDCF[0], resultDCF[1]]
                     + arrayWithUSD
-                    + resultDFC[3:]
+                    + resultDCF[3:]
                     + finalsOptions
                 )
 
