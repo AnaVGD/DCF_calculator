@@ -219,7 +219,28 @@ class DcfCalculator:
         except Exception as e:
             raise Exception("No se pudo obtener la deuda total de la acción") from e
 
-    def getGrowthEstimates(self, ticker):
+    def getGrowthEstimates(self, ticker, option):
+        """
+        Obtiene las estimaciones de crecimiento para la acción.
+
+        Args:
+            ticker (str): El símbolo de ticker de la acción.
+
+        Returns:
+            str: Las estimaciones de crecimiento.
+        """
+        try:
+            if option == "yahoo":
+                return self.getGrowthEstimatesYahoo(ticker)
+            elif option == "zacks":
+                return self.getGrowthEstimatesZacks(ticker)
+            elif option == "seeking":
+                return self.getGrowthEstimatesSeeking(ticker)
+
+        except Exception as e:
+            return str(e)
+
+    def getGrowthEstimatesYahoo(self, ticker):
         """
         Obtiene las estimaciones de crecimiento para la acción de la webd e Yahoo Finance.
 
@@ -241,6 +262,68 @@ class DcfCalculator:
             target_value = (
                 desired_table.find_all("tr")[5].find_all("td")[1].text.strip()
             )
+            return target_value
+        except IndexError:
+            raise Exception(
+                "No se encontraron suficientes tablas, filas o celdas en la página"
+            )
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Error en la solicitud: {e}")
+
+    def getGrowthEstimatesZacks(self, ticker):
+        """
+        Obtiene las estimaciones de crecimiento para la acción de la web de Zacks.
+
+        Args:
+            ticker (str): El símbolo de ticker de la acción.
+
+        Returns:
+            str: Las estimaciones de crecimiento.
+        """
+        url = f"https://www.zacks.com/stock/quote/{ticker}?q={ticker}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+        }
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+            desired_table = soup.find_all("dl", class_="abut_bottom")
+            # print(desired_table)
+            target_value = desired_table[15].find_all("dd")[0].text.strip()
+            # print(target_value)
+            return target_value
+        except IndexError:
+            raise Exception(
+                "No se encontraron suficientes tablas, filas o celdas en la página"
+            )
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Error en la solicitud: {e}")
+
+    def getGrowthEstimatesSeeking(self, ticker):
+        """
+        Obtiene las estimaciones de crecimiento para la acción de la web de Seeking Alpha.
+
+        Args:
+            ticker (str): El símbolo de ticker de la acción.
+
+        Returns:
+            str: Las estimaciones de crecimiento.
+        """
+        url = f"https://seekingalpha.com/symbol/{ticker}/growth"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+        }
+        try:
+            response = requests.get(url, headers=headers)
+            # print(response)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+            desired_table = soup.find_all("table")[0]
+            target_value = (
+                desired_table.find_all("tr")[11].find_all("td")[1].text.strip()
+            )
+            # print(target_value, 'hi')
             return target_value
         except IndexError:
             raise Exception(
@@ -306,7 +389,7 @@ class DcfCalculator:
 
         return total_equity + total_debt_cost
 
-    def dcf(self, tickerStr, g, rf, rm):
+    def dcf(self, tickerStr, g, rf, rm, option):
         """
         Calcula el valor intrínseco de una acción utilizando el modelo de descuento de flujos de efectivo (DCF).
 
@@ -321,7 +404,8 @@ class DcfCalculator:
         """
         try:
             last_year_total_debt = self.getTotalDebt(self.balanceSheet)
-            growthFCF = self.getGrowthEstimates(tickerStr)
+            growthFCF = self.getGrowthEstimates(tickerStr, option)
+            print(option, growthFCF)
             printGrowthFCF = growthFCF
             try:
                 growthFCF = float(growthFCF.replace("%", "")) / 100
@@ -330,6 +414,7 @@ class DcfCalculator:
                 growthFCF = (
                     (FCFGrow.iloc[0] / FCFGrow.iloc[-1]) ** (1 / len(FCFGrow))
                 ) - 1
+                printGrowthFCF = "{:.2f}%".format(growthFCF * 100)
 
             wacc = self.waccCalculator(rf, rm)
             if type(wacc) != float:
@@ -380,3 +465,7 @@ class DcfCalculator:
             ]
         except Exception as e:
             return str(e)
+
+
+# DcfCalculator("STX").getGrowthEstimates("AAPL")
+# DcfCalculator("STX").getGrowthEstimatesSeeking("AAPL")

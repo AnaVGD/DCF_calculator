@@ -31,7 +31,7 @@ class DcfArrayCalculator:
         except Exception as e:
             raise Exception(f"No se pudo obtener el valor de {ticker}\n {e}") from e
 
-    def arrDcf(self, tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe, hasPer):
+    def arrDcf(self, tickerStr, g, rf, rm, hasEbitda, hasEarnings, hasRoe, hasPer, growth):
         """
         Calcula los valores DCF para una lista de tickers.
 
@@ -72,7 +72,7 @@ class DcfArrayCalculator:
                         finalsOptions = ["Error"]
                         break
 
-            resultDCF = dcfCalculator.dcf(ticker, g, rf, rm)
+            resultDCF = dcfCalculator.dcf(ticker, g, rf, rm, growth)
             if isinstance(resultDCF, str):
                 finalResult.append([ticker.upper(), "Error"])
             else:

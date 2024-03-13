@@ -67,14 +67,14 @@ class DcfApp:
         )
         self.title.pack()
 
-        self.frame = tk.Frame(self.secondFrame, width=700, height=300, bg="white")
+        self.frame = tk.Frame(self.secondFrame, width=1000, height=300, bg="white")
         self.frame.pack()
 
         self.myCanvas.bind("<Configure>", self.center_window)
 
         self.style = ttkthemes.ThemedStyle()
 
-        self.exelFrame = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
+        # self.exelFrame = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
 
         self.status = tk.Label(
             self.frame, bd=0, relief=tk.SUNKEN, anchor=tk.W, fg="red", bg="white"
@@ -274,10 +274,56 @@ class DcfApp:
         )
         self.check4.bind("<Leave>", self.leave)
 
+        self.seeking = tk.IntVar()
+        self.check5 = tk.Checkbutton(
+            self.frame,
+            text="Calcular con el crecimiento de Seeking Alpha",
+            variable=self.seeking,
+            onvalue=1,
+            bg="white",
+        )
+        self.check5.pack()
+        self.check5.place(x=500, y=175)
+
+        self.seekingMessage = (
+            "El crecimiento de Seeking Alpha es el crecimiento que se espera de una empresa a largo plazo, \n"
+            "según el consenso de analistas de Seeking Alpha."
+        )
+        self.check5.bind(
+            "<Enter>", lambda event: self.enter(event, self.seekingMessage, self.check5)
+        )
+        self.check5.bind("<Leave>", self.leave)
+
+        self.zacks = tk.IntVar()
+        self.check6 = tk.Checkbutton(
+            self.frame,
+            text="Calcular con el crecimiento de Zacks",
+            variable=self.zacks,
+            onvalue=1,
+            bg="white",
+        )
+        self.check6.pack()
+        self.check6.place(x=710, y=15)
+
+        self.zacksMessage = (
+            "El crecimiento de Zacks es el crecimiento que se espera de una empresa a largo plazo, \n"
+            "según el consenso de analistas de Zacks."
+        )
+        self.check6.bind(
+            "<Enter>", lambda event: self.enter(event, self.zacksMessage, self.check6)
+        )
+        self.check6.bind("<Leave>", self.leave)
+
         self.tableFrame = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
         self.tableFrame.pack(padx=(20, 0))
 
-        self.exelFrame.pack()
+        self.tableFrame2 = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
+        self.tableFrame2.pack(padx=(20, 0), pady=(20, 0))
+
+        self.tableFrame3 = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
+        self.tableFrame3.pack(padx=(20, 0), pady=(20, 0))
+
+        # self.exelFrame.pack()
 
         self.boton1.config(command=self.threaded_create_table)
 
@@ -394,7 +440,7 @@ class DcfApp:
         Muestra el botón para exportar a Excel.
         """
         self.buttonXLS = tk.Button(
-            self.exelFrame,
+            self.frame,
             text="Exportar a Excel",
             width=20,
             height=2,
@@ -402,17 +448,51 @@ class DcfApp:
             fg="white",
         )
         self.buttonXLS.pack()
-        self.buttonXLS.place(x=200, y=10)
+        self.buttonXLS.place(x=530, y=240)
         self.buttonXLS.config(command=self.to_excel_or_csv)
 
-    def create_table(self):
+    def create_tables(self):
+        """
+        Crea las tablas con los resultados del cálculo DCF para cada opción de crecimiento.
+        """
+
+        frames = [self.tableFrame, self.tableFrame2, self.tableFrame3]
+        growthOptions = ["yahoo"]
+
+        framesOpt = [self.tableFrame, self.tableFrame2, self.tableFrame3]
+        for frameOpt in framesOpt:
+            for widget in frameOpt.winfo_children():
+                widget.destroy()
+
+        if self.seeking.get():
+            growthOptions.append("seeking")
+
+        if self.zacks.get():
+            growthOptions.append("zacks")
+
+        for i, option in enumerate(growthOptions):
+            self.create_table(option, frames[i])
+        growthOptions.clear()
+
+    def create_table(self, growthOption, frame):
         """
         Crea una tabla con los resultados del cálculo DCF.
         """
-        self.status.config(text="")
+        # for widget in frame.winfo_children():
+        #     widget.destroy()
 
-        for widget in self.tableFrame.winfo_children():
-            widget.destroy()
+        menssageOption = ""
+        if growthOption == "yahoo":
+            menssageOption = "Crecimiento de Yahoo Finance"
+        elif growthOption == "seeking":
+            menssageOption = "Crecimiento de Seeking Alpha"
+        elif growthOption == "zacks":
+            menssageOption = "Crecimiento de Zacks"
+
+        labelOptions = tk.Label(
+            frame, text=menssageOption, font=("Arial", 8), bg="white", justify="left"
+        )
+        labelOptions.pack()
 
         entry_values = [entry.get() for entry in self.entries]
 
@@ -443,8 +523,9 @@ class DcfApp:
             self.earnings.get(),
             self.roe.get(),
             self.per.get(),
+            growthOption,
         )
-
+        # print(self.data)
         tickersError = []
         for i in range(len(self.data)):
             if self.data[i][1] == "Error":
@@ -460,7 +541,7 @@ class DcfApp:
                 + self.per.get()
             )
             table = tk.ttk.Treeview(
-                self.tableFrame,
+                frame,
                 columns=tuple(range(1, columns + 1)),
                 show="headings",
                 height=height,
@@ -630,7 +711,7 @@ class DcfApp:
             y=self.ventana.winfo_height() / 2 - 50,
         )
         self.progress.start()
-        thread = threading.Thread(target=self.create_table)
+        thread = threading.Thread(target=self.create_tables)
         thread.start()
         self.ventana.after(100, self.check_thread, thread)
 
