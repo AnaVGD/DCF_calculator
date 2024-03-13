@@ -30,6 +30,7 @@ class DcfApp:
         """Barra de progreso para el cálculo DCF."""
         self.buttonXLS = None
         """Botón para exportar a Excel."""
+        self.dataArray = []
 
         self.create_widgets()
 
@@ -74,7 +75,7 @@ class DcfApp:
 
         self.style = ttkthemes.ThemedStyle()
 
-        # self.exelFrame = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
+        
 
         self.status = tk.Label(
             self.frame, bd=0, relief=tk.SUNKEN, anchor=tk.W, fg="red", bg="white"
@@ -259,7 +260,6 @@ class DcfApp:
         self.check4.pack()
         self.check4.place(x=500, y=135)
 
-        # Asociar el tooltip con el Checkbutton
         self.perMessage = (
             "El PER (Price Earnings Ratio) es la relación entre el precio de una acción y \n"
             "las ganancias por acción de la empresa. Un PER más alto puede indicar \n"
@@ -323,7 +323,9 @@ class DcfApp:
         self.tableFrame3 = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
         self.tableFrame3.pack(padx=(20, 0), pady=(20, 0))
 
-        # self.exelFrame.pack()
+        self.exelFrame = tk.Frame(self.frame, width=200, height=50, bg="blue")
+        self.exelFrame.pack()
+        self.exelFrame.place(x=530, y=240)
 
         self.boton1.config(command=self.threaded_create_table)
 
@@ -398,6 +400,7 @@ class DcfApp:
             )
             self.status.place(x=100, y=220 + (self.addRange - 5) * 40)
             self.boton1.place(x=300, y=240 + (self.addRange - 5) * 40)
+            self.exelFrame.place(x=530, y=240 + (self.addRange - 5) * 40)
             self.boton_agregar_excel.place(x=65, y=240 + (self.addRange - 5) * 40)
             self.myCanvas.configure(scrollregion=self.myCanvas.bbox("all"))
         else:
@@ -440,7 +443,7 @@ class DcfApp:
         Muestra el botón para exportar a Excel.
         """
         self.buttonXLS = tk.Button(
-            self.frame,
+            self.exelFrame,
             text="Exportar a Excel",
             width=20,
             height=2,
@@ -448,13 +451,14 @@ class DcfApp:
             fg="white",
         )
         self.buttonXLS.pack()
-        self.buttonXLS.place(x=530, y=240)
-        self.buttonXLS.config(command=self.to_excel_or_csv)
+        self.buttonXLS.place(x=0, y=0)
+        self.buttonXLS.config(command=self.to_excel_or_csv_arr)
 
     def create_tables(self):
         """
         Crea las tablas con los resultados del cálculo DCF para cada opción de crecimiento.
         """
+        self.dataArray.clear()
 
         frames = [self.tableFrame, self.tableFrame2, self.tableFrame3]
         growthOptions = ["yahoo"]
@@ -472,6 +476,7 @@ class DcfApp:
 
         for i, option in enumerate(growthOptions):
             self.create_table(option, frames[i])
+        
         growthOptions.clear()
 
     def create_table(self, growthOption, frame):
@@ -525,7 +530,7 @@ class DcfApp:
             self.per.get(),
             growthOption,
         )
-        # print(self.data)
+        self.dataArray.append(self.data)
         tickersError = []
         for i in range(len(self.data)):
             if self.data[i][1] == "Error":
@@ -624,7 +629,6 @@ class DcfApp:
             if self.addRange > 5:
                 self.status.place(x=240, y=(220 + (self.addRange - 5) * 40))
             else:
-                # lo colocamos en el centro de la ventana
                 self.status.place(
                     x=((self.frame.winfo_width() / 2) - 50) - (40 * len(tickersError)),
                     y=220,
@@ -731,6 +735,11 @@ class DcfApp:
                 self.destroy_button()
             else:
                 self.show_button()
+
+    def to_excel_or_csv_arr(self):
+        for i in range(len(self.dataArray)):
+            self.data = self.dataArray[i]
+            self.to_excel_or_csv()
 
     def to_excel_or_csv(self):
         """Función para exportar los datos a un archivo Excel o CSV"""
