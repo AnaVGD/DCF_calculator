@@ -75,8 +75,6 @@ class DcfApp:
 
         self.style = ttkthemes.ThemedStyle()
 
-        
-
         self.status = tk.Label(
             self.frame, bd=0, relief=tk.SUNKEN, anchor=tk.W, fg="red", bg="white"
         )
@@ -321,9 +319,9 @@ class DcfApp:
         self.tableFrame2.pack(padx=(20, 0), pady=(20, 0))
 
         self.tableFrame3 = tk.Frame(self.secondFrame, width=500, height=70, bg="white")
-        self.tableFrame3.pack(padx=(20, 0), pady=(20, 0))
+        self.tableFrame3.pack(padx=(20, 0), pady=(20, 30))
 
-        self.exelFrame = tk.Frame(self.frame, width=200, height=50, bg="blue")
+        self.exelFrame = tk.Frame(self.frame, width=200, height=50, bg="white")
         self.exelFrame.pack()
         self.exelFrame.place(x=530, y=240)
 
@@ -331,7 +329,7 @@ class DcfApp:
 
         self.boton_agregar_excel.pack()
         self.boton_agregar_excel.place(x=65, y=240)
-        self.boton_agregar_excel.config(command=self.agregar_datos_desde_excel)
+        self.boton_agregar_excel.config(command=self.add_excel)
 
     def center_window(self, event=None):
         """
@@ -409,7 +407,7 @@ class DcfApp:
         if self.addRange > 2:
             self.bottonDelete.config(state="active", bg="DeepSkyBlue3", fg="white")
 
-    def delete(self):
+    def delete(self, event=False):
         """
         Elimina el último campo de entrada para el ticker de la empresa.
         """
@@ -419,8 +417,11 @@ class DcfApp:
             self.entries[-1].destroy()  # Destruir el último Entry
             self.entries.pop()  # Eliminar referencia del Entry de la lista
             if self.addRange > 4:
-                self.frame.configure(height=self.frame.winfo_height() - 40)
+                self.frame.configure(
+                    height=self.frame.winfo_height() - (40 if not event else 120)
+                )
                 self.boton1.place(x=300, y=240 + (self.addRange - 5) * 40)
+                self.exelFrame.place(x=530, y=240 + (self.addRange - 5) * 40)
                 self.boton_agregar_excel.place(x=40, y=240 + (self.addRange - 5) * 40)
                 self.status.place(x=100, y=220 + (self.addRange - 5) * 40)
                 self.myCanvas.configure(scrollregion=self.myCanvas.bbox("all"))
@@ -476,7 +477,7 @@ class DcfApp:
 
         for i, option in enumerate(growthOptions):
             self.create_table(option, frames[i])
-        
+
         growthOptions.clear()
 
     def create_table(self, growthOption, frame):
@@ -647,7 +648,9 @@ class DcfApp:
             col (int): El índice de la columna a ordenar.
             reverse (bool): True para orden descendente, False para orden ascendente.
         """
-        l = [(tv.set(k, col), k) for k in tv.get_children("")]
+        l = [(tv.set(k, col).replace("%", "").replace("$", ""), k) for k in tv.get_children("")]
+        l = [(float(k[0].replace(".", "")), k[1]) for k in l]
+
         l.sort(reverse=reverse)
 
         for index, (val, k) in enumerate(l):
@@ -785,12 +788,12 @@ class DcfApp:
         if file_path:
             df_result.to_excel(file_path, index=False)
 
-    def agregar_datos_desde_excel(self):
+    def add_excel(self):
         """
         Agrega tickers desde un archivo de Excel al formulario.
         """
         for i in range(self.addRange):
-            self.delete()
+            self.delete(True)
 
         try:
             ruta_archivo = filedialog.askopenfilename(
@@ -800,13 +803,13 @@ class DcfApp:
                 ]
             )
             if ruta_archivo:
-                self.procesar_datos_desde_excel(ruta_archivo)
+                self.process_excel(ruta_archivo)
         except Exception as e:
             print("Ocurrió un error al abrir el archivo:", e)
         self.myCanvas.update_idletasks()
         self.center_window()
 
-    def procesar_datos_desde_excel(self, ruta_archivo):
+    def process_excel(self, ruta_archivo):
         """
         Procesa los datos desde un archivo de Excel y los agrega al formulario.
 

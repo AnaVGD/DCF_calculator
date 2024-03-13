@@ -405,7 +405,6 @@ class DcfCalculator:
         try:
             last_year_total_debt = self.getTotalDebt(self.balanceSheet)
             growthFCF = self.getGrowthEstimates(tickerStr, option)
-            print(option, growthFCF)
             printGrowthFCF = growthFCF
             try:
                 growthFCF = float(growthFCF.replace("%", "")) / 100

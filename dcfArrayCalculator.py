@@ -7,7 +7,7 @@ class DcfArrayCalculator:
         """Inicializa el objeto DcfArrayCalculator."""
         pass
 
-    def getValue(self, ticker, method, format, percentage):
+    def getValue(self, ticker, method, format, percentage, numberFormat):
         """
         Obtiene el valor de un método específico y lo formatea según sea necesario.
 
@@ -27,6 +27,8 @@ class DcfArrayCalculator:
                     value = "{:.2f}%".format(value)
                 else:
                     value = "{:,.2f}".format(value)
+            if numberFormat:
+                value = "$ " + "{:,.0f}".format(value).replace(",", ".")
             return value
         except Exception as e:
             raise Exception(f"No se pudo obtener el valor de {ticker}\n {e}") from e
@@ -54,17 +56,17 @@ class DcfArrayCalculator:
             dcfCalculator = DcfCalculator(yf.Ticker(ticker))
 
             values = [
-                (hasEbitda, dcfCalculator.getEbitda, False, False),
-                (hasEarnings, dcfCalculator.getEarnings, True, True),
-                (hasRoe, dcfCalculator.getRoe, True, True),
-                (hasPer, dcfCalculator.getPer, True, False),
+                (hasEbitda, dcfCalculator.getEbitda, False, False, True),
+                (hasEarnings, dcfCalculator.getEarnings, True, True, False),
+                (hasRoe, dcfCalculator.getRoe, True, True, False),
+                (hasPer, dcfCalculator.getPer, True, False, False),
             ]
 
             finalsOptions = []
-            for has_value, method, format, percentage in values:
+            for has_value, method, format, percentage, numberFormat in values:
                 if has_value:
                     try:
-                        value = self.getValue(ticker, method, format, percentage)
+                        value = self.getValue(ticker, method, format, percentage, numberFormat)
                         if value is not None:
                             finalsOptions.append(value)
                     except Exception as e:
